@@ -23,17 +23,17 @@ using namespace blocksci;
 
 std::vector<std::pair<Script, Script>> process_transaction(const Transaction &tx) {
     std::vector<std::pair<Script, Script>> pairsToUnion;
-    
+
     if (!heuristics::isCoinjoin(tx) && !tx.isCoinbase()) {
         auto inputs = tx.inputs();
         auto firstAddress = inputs[0].getAddress();
         for (uint16_t i = 1; i < inputs.size(); i++) {
             pairsToUnion.emplace_back(firstAddress, inputs[i].getAddress());
         }
-        
-        if (auto change = heuristics::uniqueChangeByLegacyHeuristic(tx)) {
-            pairsToUnion.emplace_back(change->getAddress(), firstAddress);
-        }
+
+        // if (auto change = heuristics::uniqueChangeByLegacyHeuristic(tx)) {
+        //     pairsToUnion.emplace_back(change->getAddress(), firstAddress);
+        // }
     }
     return pairsToUnion;
 }
@@ -55,7 +55,7 @@ void segmentWork(uint32_t start, uint32_t end, uint32_t segmentCount, Job job) {
         uint32_t endSegment = i;
         segments.emplace_back(startSegment + start, endSegment);
     }
-    
+
     std::vector<std::thread> threads;
     for (uint32_t i = 0; i < segmentCount - 1; i++) {
         auto segment = segments[i];
@@ -65,12 +65,12 @@ void segmentWork(uint32_t start, uint32_t end, uint32_t segmentCount, Job job) {
             }
         });
     }
-    
+
     auto segment = segments.back();
     for (uint32_t i = segment.first; i < segment.second; i++) {
         job(i);
     }
-    
+
     for (auto &thread : threads) {
         thread.join();
     }
@@ -104,14 +104,14 @@ struct AddressDisjointSets {
 };
 
 std::vector<uint32_t> getClusters(Blockchain &chain, std::unordered_map<ScriptType::Enum, uint32_t> addressStarts, uint32_t totalScriptCount) {
-    
+
     AddressDisjointSets ds(totalScriptCount, std::move(addressStarts));
-    
+
     auto &scripts = *chain.access->scripts;
 
     auto scriptHashCount = scripts.scriptCount<ScriptType::Enum::SCRIPTHASH>();
-    
-    
+
+
     segmentWork(1, scriptHashCount + 1, 8, [&ds, &scripts](uint32_t index) {
         Script pointer(index, ScriptType::Enum::SCRIPTHASH);
         script::ScriptHash scripthash{scripts, index};
@@ -120,7 +120,7 @@ std::vector<uint32_t> getClusters(Blockchain &chain, std::unordered_map<ScriptTy
             ds.link_addresses(pointer, *wrappedAddress);
         }
     });
-    
+
     auto extract = [&](const Transaction &tx) {
         auto pairs = process_transaction(tx);
         for (auto &pair : pairs) {
@@ -128,11 +128,11 @@ std::vector<uint32_t> getClusters(Blockchain &chain, std::unordered_map<ScriptTy
         }
         return 0;
     };
-    
+
     chain.mapReduce<int>(0, chain.size() - 10, extract, [](int &a,int &) -> int & {return a;});
-    
+
     ds.resolveAll();
-    
+
     std::vector<uint32_t> parents;
     parents.reserve(ds.size());
     for (uint32_t i = 0; i < totalScriptCount; i++) {
@@ -153,22 +153,22 @@ uint32_t remapClusterIds(std::vector<uint32_t> &parents) {
         }
         clusterNum = clusterId;
     }
-    
+
     std::cout << "ClusterCount is " << clusterCount << "\n";
-    
+
     return clusterCount;
 }
 
 void recordOrderedAddresses(const std::vector<uint32_t> &parent, std::vector<uint32_t> &clusterPositions, const std::unordered_map<ScriptType::Enum, uint32_t> &scriptStarts) {
-    
+
     std::map<uint32_t, ScriptType::Enum> typeIndexes;
     for (auto &pair : scriptStarts) {
         typeIndexes[pair.second] = pair.first;
     }
-    
+
     std::vector<Script> orderedScripts;
     orderedScripts.resize(parent.size());
-    
+
     for (uint32_t i = 0; i < parent.size(); i++) {
         uint32_t &j = clusterPositions[parent[i]];
         auto it = typeIndexes.upper_bound(i);
@@ -178,21 +178,21 @@ void recordOrderedAddresses(const std::vector<uint32_t> &parent, std::vector<uin
         orderedScripts[j] = Script(addressNum, addressType);
         j++;
     }
-    
+
     std::ofstream clusterAddressesFile("clusterAddresses.dat", std::ios::binary);
     clusterAddressesFile.write(reinterpret_cast<char *>(orderedScripts.data()), sizeof(Script) * orderedScripts.size());
 }
 
 int main(int argc, const char * argv[]) {
     assert(argc == 2);
-    
+
     auto progStart = std::chrono::steady_clock::now();
-    
+
     Blockchain chain(argv[1]);
-    
+
     auto &scripts = *chain.access->scripts;
     size_t totalScriptCount = scripts.totalAddressCount();;
-    
+
     std::unordered_map<ScriptType::Enum, uint32_t> scriptStarts;
     for (size_t i = 0; i < ScriptType::size; i++) {
         scriptStarts[ScriptType::all[i]] = 0;
@@ -200,7 +200,7 @@ int main(int argc, const char * argv[]) {
             scriptStarts[ScriptType::all[i]] += scripts.scriptCount(ScriptType::all[j]);
         }
     }
-    
+
     auto allClusterStart = std::chrono::steady_clock::now();
     auto parent = getClusters(chain, scriptStarts, static_cast<uint32_t>(totalScriptCount));
     std::cout << "Finished main clustering in " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - allClusterStart).count() / 1000000.0 << " seconds\n";
@@ -211,15 +211,15 @@ int main(int argc, const char * argv[]) {
     for (auto parentId : parent) {
         clusterPositions[parentId + 1]++;
     }
-    
+
     for (size_t i = 1; i < clusterPositions.size(); i++) {
         clusterPositions[i] += clusterPositions[i-1];
     }
-    
+
     std::cout << "Finished position tracking in " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - allClusterStart).count() / 1000000.0 << " seconds\n";
-    
+
     auto recordOrdered = std::async(std::launch::async, recordOrderedAddresses, parent, std::ref(clusterPositions), scriptStarts);
-    
+
     segmentWork(0, ScriptType::size, ScriptType::size, [&scriptStarts, &scripts, &parent](uint32_t index) {
         auto type = ScriptType::all[index];
         uint32_t startIndex = scriptStarts[type];
@@ -229,13 +229,13 @@ int main(int argc, const char * argv[]) {
         std::ofstream clusterIndexFile(ss.str(), std::ios::binary);
         clusterIndexFile.write(reinterpret_cast<char *>(parent.data() + startIndex), sizeof(uint32_t) * totalCount);
     });
-    
+
     recordOrdered.get();
-    
+
     std::ofstream clusterOffsetFile("clusterOffsets.dat", std::ios::binary);
     clusterOffsetFile.write(reinterpret_cast<char *>(clusterPositions.data()), sizeof(uint32_t) * clusterPositions.size());
-    
+
     std::cout << "Finished whole program in " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - progStart).count() / 1000000.0 << " seconds\n";
-    
+
     return 0;
 }
