@@ -5,13 +5,6 @@ import os
 import blocksci
 import blocksci.cluster_python
 
-
-while true:
-    run_blocksci_parser()
-    run_clusterer()
-    dump_clusters()
-    move_clusters()
-
 def run_blocksci_parser():
     # get recent block tip from bitcoind
     config_path = '/home/ubuntu/.bitcoin/.cookie'
@@ -64,3 +57,9 @@ def dump_clusters():
 def move_clusters():
     # move all cluster file to the parser server
     os.system("scp -i /home/ubuntu/.ssh/merkle-nv.pem /home/ubuntu/exchanges/* ubuntu@ec2-34-239-139-135.compute-1.amazonaws.com:/historical/merkle-bitcoin-parser/data/exchanges")
+
+while True:
+    run_blocksci_parser()
+    run_clusterer()
+    dump_clusters()
+    move_clusters()
