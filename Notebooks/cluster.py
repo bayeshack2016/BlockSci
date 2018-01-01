@@ -45,16 +45,16 @@ def dump_clusters():
                 addr_object = blocksci.Address.from_string(known_addr)
                 c = cm.cluster_with_address(addr_object)
                 for s in c.scripts:
-                    if s.type == blocksci.address_type.pubkey:
+                    if s.type == blocksci.script_type.pubkey:
                         addr = s.script.address_string
                         f.write(addr+"\n")
-                    elif s.type == blocksci.address_type.scripthash:
+                    elif s.type == blocksci.script_type.scripthash:
                         addr = s.script.address
                         f.write(addr+"\n")
-                    elif s.type == blocksci.address_type.multisig:
+                    elif s.type == blocksci.script_type.multisig:
                         addrs = s.script.addresses
                         for addr in addrs:
-                            f.write(addr+"\n")
+                            f.write(addr.script.address_string+"\n")
         end_time = time.time()
         print("Finished dumping addresses for %s | %i s" % (name, end_time - start_time))
 
