@@ -5,7 +5,7 @@ import os
 import blocksci
 import blocksci.cluster_python
 
-def run_blocksci_parser():
+def get_current_block():
     # get recent block tip from bitcoind
     config_path = '/home/ubuntu/.bitcoin/.cookie'
     f = open(config_path, 'r')
@@ -15,6 +15,9 @@ def run_blocksci_parser():
     block_info = json.loads(block_info)
     block_tip = block_info["blocks"]
     print("Most recent block is %s" %(block_tip))
+    return block_tip
+
+def run_blocksci_parser(block_tip):
     # update blockSci to recent - 10
     os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update disk --coin-directory /home/ubuntu/.bitcoin --max-block %i" %(block_tip - 10))
 
@@ -31,7 +34,8 @@ def dump_clusters():
         'bittrex':['1N52wHoVR79PMDishab2XmRHsbekCdGquK'],
         'poloniex':["17A16QmavnUfCW11DAApiJxp7ARnxN5pGX"],
         'kraken':["14eQD1QQb8QFVG8YFwGz7skyzsvBLWLwJS"],
-        'bitfinex':["1DKxBfaSJX9YmuKgxsxqV36Ngh8pETaQjp", "19VNw8EQWKTmN7u1X15hqyWHrymrCCVWdK"]
+        'bitfinex':["1DKxBfaSJX9YmuKgxsxqV36Ngh8pETaQjp", "19VNw8EQWKTmN7u1X15hqyWHrymrCCVWdK"],
+        'gdax':["12h1fc3HpRi8HxwmLeAVEQ8bk5LZrj4uhT","3BCecHMNH8wFQ4KivDnMUo8EbZgjtkE1aM"]
     }
     for name, known_addrs in exchanges.items():
         print("Start dumping addresses for %s" % (name))
@@ -58,8 +62,12 @@ def move_clusters():
     # move all cluster file to the parser server
     os.system("scp -i /home/ubuntu/.ssh/merkle-nv.pem /home/ubuntu/exchanges/* ubuntu@ec2-34-239-139-135.compute-1.amazonaws.com:/historical/merkle-bitcoin-parser/data/exchanges")
 
+last_block = 0
 while True:
-    run_blocksci_parser()
-    run_clusterer()
-    dump_clusters()
-    move_clusters()
+    current_block = get_current_block()
+    if (current_block > last_block):
+        run_blocksci_parser(current_block)
+        run_clusterer()
+        dump_clusters()
+        move_clusters()
+        last_block = current_block
