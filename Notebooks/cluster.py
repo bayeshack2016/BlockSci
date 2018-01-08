@@ -26,7 +26,7 @@ def run_blocksci_parser(block_tip):
     os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
     # handle core dump exception from blockSci
     except:
-        os.system("rm ../../bitcoin/parser/blockList.dat ")
+        os.system("rm /home/ubuntu/bitcoin/parser/blockList.dat ")
         run_blocksci_parser(block_tip)
 
 def run_clusterer():
