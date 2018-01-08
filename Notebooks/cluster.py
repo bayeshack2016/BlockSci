@@ -6,7 +6,7 @@ import blocksci
 import blocksci.cluster_python
 
 # bitcoind --datadir=/home/ubuntu/.bitcoin/ --daemon
-# /home/ubuntu/bitcoin/parser/blockList.dat cause problems
+# scp -i ~/.ssh/merkle-nv.pem cluster.py ubuntu@ec2-34-207-247-171.compute-1.amazonaws.com:/home/ubuntu/BlockSci/Notebooks/
 
 def get_current_block():
     # get recent block tip from bitcoind
@@ -22,9 +22,9 @@ def get_current_block():
 
 def run_blocksci_parser(block_tip):
     # update blockSci to recent - offset
-    offset = 20
-    os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
-    # handle core dump exception from blockSci
+    offset = 10
+    try:
+        os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
     except:
         os.system("rm /home/ubuntu/bitcoin/parser/blockList.dat ")
         run_blocksci_parser(block_tip)
