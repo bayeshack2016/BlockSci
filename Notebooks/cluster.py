@@ -5,6 +5,9 @@ import os
 import blocksci
 import blocksci.cluster_python
 
+# bitcoind --datadir=/home/ubuntu/.bitcoin/ --daemon
+# /home/ubuntu/bitcoin/parser/blockList.dat cause problems
+
 def get_current_block():
     # get recent block tip from bitcoind
     config_path = '/home/ubuntu/.bitcoin/.cookie'
@@ -18,8 +21,13 @@ def get_current_block():
     return block_tip
 
 def run_blocksci_parser(block_tip):
-    # update blockSci to recent - 10
-    os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update disk --coin-directory /home/ubuntu/.bitcoin --max-block %i" %(block_tip - 10))
+    # update blockSci to recent - offset
+    offset = 20
+    os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
+    # handle core dump exception from blockSci
+    except:
+        os.system("rm ../../bitcoin/parser/blockList.dat ")
+        run_blocksci_parser(block_tip)
 
 def run_clusterer():
     # run blockSci clustering & move cluster data into the correct directory
@@ -71,3 +79,4 @@ while True:
         dump_clusters()
         move_clusters()
         last_block = current_block
+    time.sleep(1)
