@@ -72,6 +72,7 @@ def move_clusters():
 
 last_block = 0
 while True:
+    print(time.ctime())
     current_block = get_current_block()
     if (current_block > last_block):
         run_blocksci_parser(current_block)
