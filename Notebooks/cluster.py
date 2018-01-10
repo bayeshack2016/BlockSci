@@ -23,9 +23,9 @@ def get_current_block():
 def run_blocksci_parser(block_tip):
     # update blockSci to recent - offset
     offset = 10
-    try:
-        os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
-    except:
+    result = os.system("blocksci_parser --output-directory /home/ubuntu/bitcoin update --max-block %i disk --coin-directory /home/ubuntu/.bitcoin" %(block_tip - offset))
+    # error code for core dump
+    if result == 34304:
         os.system("rm /home/ubuntu/bitcoin/parser/blockList.dat ")
         run_blocksci_parser(block_tip)
 
