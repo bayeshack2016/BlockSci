@@ -20,11 +20,11 @@
 #include <range/v3/iterator_range.hpp>
 
 namespace blocksci {
-    
+
     ReorgException::ReorgException() : std::runtime_error("") {}
-    
+
     ReorgException::~ReorgException() = default;
-    
+
     void ChainAccess::setup() {
         maxHeight = static_cast<BlockHeight>(blockFile.size()) - blocksIgnored;
         if (maxHeight > BlockHeight(0)) {
@@ -37,7 +37,7 @@ namespace blocksci {
             _maxLoadedTx = 0;
         }
     }
-    
+
     ChainAccess::ChainAccess(const DataConfiguration &config, bool errorOnReorg_, BlockHeight blocksIgnored_) :
     blockFile(config.blockFilePath()),
     blockCoinbaseFile(config.blockCoinbaseFilePath()),
@@ -48,7 +48,7 @@ namespace blocksci {
     errorOnReorg(errorOnReorg_) {
         setup();
     }
-    
+
     void ChainAccess::reload() {
         blockFile.reload();
         blockCoinbaseFile.reload();
@@ -56,11 +56,11 @@ namespace blocksci {
         txHashesFile.reload();
         setup();
     }
-    
+
     size_t ChainAccess::txCount() const {
         return _maxLoadedTx;
     }
-    
+
     BlockHeight ChainAccess::getBlockHeight(uint32_t txIndex) const {
         reorgCheck();
         if (errorOnReorg && txIndex >= _maxLoadedTx) {
@@ -73,7 +73,7 @@ namespace blocksci {
         it--;
         return static_cast<BlockHeight>(std::distance(blockRange.begin(), it));
     }
-    
+
     std::vector<unsigned char> ChainAccess::getCoinbase(uint64_t offset) const {
         auto pos = blockCoinbaseFile.getDataAtOffset(offset);
         uint64_t length = *reinterpret_cast<const uint32_t *>(pos);
@@ -81,5 +81,5 @@ namespace blocksci {
         auto range = boost::make_iterator_range_n(reinterpret_cast<const unsigned char *>(pos), length);
         return std::vector<unsigned char>(range.begin(), range.end());
     }
-    
+
 }

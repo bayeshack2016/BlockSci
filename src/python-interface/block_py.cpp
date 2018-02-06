@@ -89,7 +89,7 @@ void init_block(py::module &m) {
         }
     ))
     ;
-    
+
     py::class_<uint160>(m, "uint160")
     .def("__repr__", &uint160::GetHex)
     .def(py::pickle(
@@ -104,7 +104,7 @@ void init_block(py::module &m) {
         }
     ))
     ;
-    
+
     py::class_<Block> cl(m, "Block", "Class representing a block in the blockchain");
     cl
     .def(py::init<blocksci::BlockHeight>())
@@ -130,16 +130,16 @@ void init_block(py::module &m) {
         if (i < 0) {
             i += block.size();
         }
-        
+
         if (i < 0) {
             throw py::index_error();
         }
-        
+
         uint64_t posIndex = static_cast<uint64_t>(i);
         if (posIndex >= block.size()) {
             throw py::index_error();
         }
-        
+
         return block[i];
     })
     .def("__getitem__", [](const Block &block, py::slice slice) -> ranges::any_view<Transaction> {

@@ -31,9 +31,9 @@ std::vector<std::pair<Script, Script>> process_transaction(const Transaction &tx
             pairsToUnion.emplace_back(firstAddress, inputs[i].getAddress());
         }
 
-        // if (auto change = heuristics::uniqueChangeByLegacyHeuristic(tx)) {
-        //     pairsToUnion.emplace_back(change->getAddress(), firstAddress);
-        // }
+        if (auto change = heuristics::uniqueChangeByLegacyHeuristic(tx)) {
+            pairsToUnion.emplace_back(change->getAddress(), firstAddress);
+        }
     }
     return pairsToUnion;
 }
